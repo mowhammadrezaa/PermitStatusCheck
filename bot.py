@@ -165,15 +165,15 @@ def build_result_message(permit_code: str, result: dict) -> str:
 def normalize_permit_code(raw: str) -> str:
     """
     Normalize user input into a full permit code.
-    - 10 alphanumeric chars  → use as-is          (e.g. 26BO123456)
-    - 6 digits only          → prepend current year (e.g. 123456 → 26123456)
+    - 10 alphanumeric chars  → use as-is            (e.g. 26BO123456)
+    - 6 digits only          → prepend YYBO prefix   (e.g. 123456 → 26BO123456)
     - anything else           → uppercase & return as-is, let the API decide
     """
     code = raw.strip().upper()
-    # If exactly 6 digits, prepend current 2-digit year
+    # If exactly 6 digits, prepend current 2-digit year + "BO"
     if re.match(r"^\d{6}$", code):
         year_prefix = str(datetime.now().year % 100).zfill(2)
-        code = year_prefix + code
+        code = year_prefix + "BO" + code
     return code
 
 
@@ -203,8 +203,8 @@ async def start(update: Update, context) -> None:
         "\U0001f4cc <b>How it works:</b>\n"
         "  Just send me your permit code anytime!\n"
         "  (e.g. <code>26BO123456</code> or just <code>123456</code>)\n\n"
-        "\U0001f4a1 <i>Tip: If you send only 6 digits, the current\n"
-        f"year (<code>{str(datetime.now().year % 100).zfill(2)}</code>) "
+        "\U0001f4a1 <i>Tip: If you send only 6 digits,\n"
+        f"<code>{str(datetime.now().year % 100).zfill(2)}BO</code> "
         "is added automatically.</i>\n\n"
         f"{'─' * 30}\n"
         "\U0001f447  <i>Choose an option or just type your code</i>"
@@ -233,8 +233,8 @@ async def check_button(update: Update, context) -> None:
         "\U0001f4cb  <b>Accepted formats:</b>\n"
         f"  \u2022  Full code:  <code>{year}BO123456</code>  (10 chars)\n"
         f"  \u2022  Short code: <code>123456</code>  (6 digits)\n\n"
-        "\U0001f4a1 <i>If you send 6 digits, the current year\n"
-        f"prefix (<code>{year}</code>) is added automatically.</i>"
+        "\U0001f4a1 <i>If you send 6 digits,\n"
+        f"<code>{year}BO</code> is added automatically.</i>"
     )
     await query.edit_message_text(prompt, parse_mode=ParseMode.HTML)
 
@@ -290,7 +290,7 @@ async def help_button(update: Update, context) -> None:
         "querying the official Polizia di Stato portal.\n\n"
         "\U0001f4cb  <b>Accepted Formats:</b>\n"
         "  \u2022  <code>26BO123456</code>  — full 10-char code\n"
-        "  \u2022  <code>123456</code>  — 6 digits (year auto-added)\n\n"
+        "  \u2022  <code>123456</code>  — 6 digits (YYBO auto-added)\n\n"
         "\U0001f6a6  <b>Status Meanings:</b>\n\n"
         "\U0001f7e2  <b>Ready for Pickup</b>\n"
         "  Your permit is ready! Book an appointment\n"
@@ -324,7 +324,7 @@ async def help_command(update: Update, context) -> None:
         "\U0001f7e2  <b>Ready for Pickup</b> — Book an appointment!\n"
         "\U0001f7e1  <b>Being Processed</b> — Check back later.\n"
         "\U0001f534  <b>Not Yet Started</b> — Processing hasn't begun.\n\n"
-        "\U0001f4cb  <b>Formats:</b>  <code>26BO123456</code> or <code>123456</code>\n\n"
+        "\U0001f4cb  <b>Formats:</b>  <code>26BO123456</code> or just <code>123456</code>\n\n"
         "\U0001f4ac  <b>Commands:</b>  /start  /check  /help"
     )
     keyboard = InlineKeyboardMarkup(
